@@ -1,0 +1,26 @@
+Part 1:
+
+1.
+2 Biological reads: 1294_S1_L008_R1_001.fastq.gz & 1294_S1_L008_R4_001.fastq.gz
+R1 = forward --> better quality (see mean scores plots)
+R4 = reverse --> worse, has been on sequencer longer
+2 Index reads: 1294_S1_L008_R2_001.fastq.gz & 1294_S1_L008_R3_001.fastq.gz
+
+2.
+a)
+	see attached figures
+
+b)
+	The averages of the average quality scores for R1 and R4 are about 39 and 37, respectively. The averages
+	of the average quality scores for R2 and R3 are about 36 and 35, respectively. It seems reasonable to 
+	designate the quality score cutoff around 35 for biological sequencing reads, as these are on average
+	relatively high quality and will be mostly kept. Additionally, there may be some nucleotide ambiguity
+	in biological sequencing reads, as they may prove useful for later analysis. The quality score cutoff
+	for index reads should be higher than the sequencing reads, perhaps 37, as you want less ambiguity in 
+	the nucleotides that are responsible for labeling your sequences.
+
+c)
+	code for R2: zcat 1294_S1_L008_R2_001.fastq.gz | sed -n '2~4p' | grep 'N' | wc -l
+	number of Ns in R2: 3,976,613
+	code for R3: zcat 1294_S1_L008_R3_001.fastq.gz | sed -n '2~4p' | grep 'N' | wc -l
+	number of Ns in R3: 3,328,051
