@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+#SBATCH --partition=short        ### Partition (like a queue in PBS)
+#SBATCH --job-name=PS8          ### Job Name
+#SBATCH --time=0-15:00:00       ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=3               ### Number of nodes needed for the job
+#SBATCH --ntasks-per-node=10     ### Number of tasks to be launched per Node
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=mrezzoni@uoregon.edu
+
+# This script takes the output of the forward and reverse biological and sequence reads
+# and writes them to a tsv file to create the figures for the mean scores.
+
+BioRead1="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R1_001.fastq.gz"
+BioRead2="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R4_001.fastq.gz"
+
+IndexRead1="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R2_001.fastq.gz"
+IndexRead2="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R3_001.fastq.gz"
+
+/usr/bin/time -v ./demultiplexing_script -f $BioRead1 -s 101 > 1294_S1_L008_R1_001_means.txt
+echo "first done!"
+/usr/bin/time -v ./demultiplexing_script -f $BioRead2 -s 101 > 1294_S1_L008_R4_001_means.txt
+echo "second done!"
+/usr/bin/time -v ./demultiplexing_script -f $IndexRead1 -s 8 > 1294_S1_L008_R2_001_means.txt
+echo "third done!"
+/usr/bin/time -v ./demultiplexing_script -f $IndexRead2 -s 8 > 1294_S1_L008_R3_001_means.txt
+echo "fourth done...I can't believe this worked"

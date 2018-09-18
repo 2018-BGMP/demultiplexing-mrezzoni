@@ -1,0 +1,195 @@
+Problem: An index tag (barcode) of 8 nucleotides is added to each sample to allow different samples in lanes to be
+of an Illumina flow cell to be identified. This allows multiplexing, in which large numbers of libraries are pooled
+and sequenced simultaneously during a single run. Demultiplexing is the reverse process of multiplexing, in which your
+sequence reads are divided into separate files based on their index tag. Index hopping is a phenomenon that occurs when
+an index is incorrectly assigned to an unexpected file. 
+
+Solution: This program will take paired end reads and check if they have been properly mapped. If they are properly mapped,
+the sequence ID will be recorded and the forward and reverse sequences will get written to the file of their respective
+index. Reads are properly mapped if (1) both forward and reverse indexes are 1 of the 24 expected indexes AND (2) they match
+each other. If one of the previously mentioned conditions is not met, then index hopping has occurred and the sequence will get 
+written to its respective unknown file.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+UNIT TESTS
+
+indexes = {A1; AAAAAAAA} --> TTTTTTTT is the same index, just the reverse complement
+
+files to write out to:
+A1_forward.fq
+A1_reverse.fq
+
+@K00337:83:HJKJNBBXX:8:1101:1448:1191 1:N:0:1
+GNGACT
++
+JJFJJJ
+
+@K00337:83:HJKJNBBXX:8:1101:1449:1191 1:N:0:1
+AAAAAAAA
++
+-#AAFAAF
+
+@K00337:83:HJKJNBBXX:8:1101:1450:1191 1:N:0:1
+TTTTTTTT
++
+F-A7JAJJ
+
+@K00337:83:HJKJNBBXX:8:1101:1451:1191 1:N:0:1
+CTGAAA
++
+F7JAJJ
+
+####### expected output #######
+A1_forward.fq gets the following lines:
+@K00337:83:HJKJNBBXX:8:1101:1448:1191 1:N:0:1
+GNGACT
++
+JJFJJJ
+
+A1_reverse.fq gets the following lines:
+@K00337:83:HJKJNBBXX:8:1101:1451:1191 1:N:0:1
+CTGAAA
++
+F7JAJJ
+
+--------------------------------------------------------------------------------------------------------------------------------------
+SCRIPT
+
+2 Biological reads: 1294_S1_L008_R1_001.fastq.gz & 1294_S1_L008_R4_001.fastq.gz
+R1 = forward --> better quality (see mean scores plots)
+R4 = reverse --> worse, has been on sequencer longer
+2 Index reads: 1294_S1_L008_R2_001.fastq.gz & 1294_S1_L008_R3_001.fastq.gz
+
+indexes = {B1:GTAGCGTA, A5:CGATCGAT, C1:GATCAAGG, B9:AACAGCGA, C9:TAGCCATG, C3:CGGTAATC, B3:CTCTGGAT, C4:TACCGGAT, A11:CTAGCTCA, C7:CACTTCAC, B2:GCTACTCT/
+A1:ACGATCAG, B7:TATGGCAC, A3:TGTTCCGT, B4:GTCCTAAG, A12:TCGACAAG, C10:TCTTCGAC, A2:ATCATGCG, C2:ATCGTGGT, A10:TCGAGAGT, B8:TCGGATTC, A7:GATCTTGC, B10:AGAGTCCA, A8:AGGATAGC}
+
+Open and create forward read fastq files to write to:
+B1 forward
+A5 forward
+C1 forward
+B9 forward
+C9 forward
+C3 forward
+B3 forward
+C4 forward
+A11 forward
+C7 forward
+B2 forward
+A1 forward
+B7 forward
+A3 forward
+B4 forward
+A12 forward
+C10 forward
+A2 forward
+C2 forward
+A10 forward
+B8 forward
+A7 forward
+B10 forward
+A8 forward
+unknown forward
+
+Open and create reverse read fastq files to write to:
+B1 reverse
+A5 reverse
+C1 reverse
+B9 reverse
+C9 reverse
+C3 reverse
+B3 reverse
+C4 reverse
+A11 reverse
+C7 reverse
+B2 reverse
+A1 reverse
+B7 reverse
+A3 reverse
+B4 reverse
+A12 reverse
+C10 reverse
+A2 reverse
+C2 reverse
+A10 reverse
+B8 reverse
+A7 reverse
+B10 reverse
+A8 reverse
+unknown reverse
+
+BOTH indexes have to match - if no index hopping occurred, they should be the same
+index swapping = mismatched indices --> bin in the unknown file
+if EITHER is mismatched, then you must bin both
+
+def build fastq --> high level function to build either forward or reverse fastq files
+'''
+(str) --> str
+
+test input:
+A1_reverse.fq gets the following lines:
+@K00337:83:HJKJNBBXX:8:1101:1451:1191 1:N:0:1
+CTGAAA
++
+F7JAJJ
+
+test output:
+A1_reverse.fq gets the following lines:
+@K00337:83:HJKJNBBXX:8:1101:1451:1191 1:N:0:1
+CTGAAA
++
+F7JAJJ
+'''
+isolate biological read sequence ID line (line 1) as variable; split and strip
+isolate biological read sequence line (line 2) as variable; split and strip
+isolate biological read plus line (line 3) as variable; split and strip
+isolate biological read quality score line (line 4) as variable; split and strip
+
+return the four variables in order
+
+
+open the four files 
+	read the files in linear order - this is critical, as index reads are aligned to biological reads
+	loop through the index reads and biological reads (R2, R1 then R3, R4)  
+	
+	pair_index = {} - Tracks the number of different index combinations. Key = Index combination (B1_B1, B1_A5, B1_C1, etc); Value = Count of occurrences
+	
+	start with the FORWARD read:
+		isolate index sequence line (line 2 of R2); split and strip
+				
+		build the components of forward fastq file by calling high level function:
+		build fastq(FORWARD)
+				
+		read through the isolated forward index sequence lines
+			compare current line to the values of the indexes dictionary
+				if current index matches with one of the index sequences in the index dictionary
+					keep the index to use as the first part of the key for the pair_index dictionary (B1_ )
+				
+					move on to the REVERSE read (only get to this step if the forward read is legit)
+						isolate index sequence line (line 2 of R3); split and strip
+												
+						build the components of reverse fastq file by calling high level function:
+						build fastq(REVERSE)
+						
+						read through the isolated reverse index sequence lines
+							compare current line to the value of the index dictionary
+								if current index matches with one of the index sequences in the index dictionary AND matches forward index - both ends match!
+									write forward biological fastq components to respective index file
+									write reverse biological fastq components to respective index file
+									keep the index to use as the second part of the key for the pair_index dictionary (B1_B1)
+									increment the pair's counter
+								else - the forward end matched but the reverse didn't
+									write sequence ID and reverse sequence to the reverse unknown file
+									write sequence ID and forward sequence to the forward unknown file
+									increment mismatched pair's counter (B1_A5)
+			
+				else
+					write current forward biological fastq components to the forward unknown file
+					write current reverse biological fastq components to the reverse unknown file
+
+Informative output as a tsv:
+pair_index data (Index combination with its respective count)
+percentage of reads mapped
+percentage of reads unmapped
+index pairs with the highest count
+index pairs with the lowest count
+		
