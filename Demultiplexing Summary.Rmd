@@ -2,8 +2,11 @@
 title: "Demultiplexing Summary"
 author: "Mitchell Rezzonico"
 date: "October 16, 2018"
-output: html_document
+output: pdf_document
+documentclass: extarticle
+fontsize: 8pt
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -30,7 +33,7 @@ def get_arguments():
     parser.add_argument("-i2", "--index2", help="Reverse Index File", required=True, type=str)
     parser.add_argument("-r2", "--read2", help="Reverse Read File", required=True, type=str)
     parser.add_argument("-qs", "--quality_score", help="Cutoff for quality score", required=True, type=int)
-    parser.add_argument("-I", "--Index_library", help="Input index (dual matched) library. The indexes must be in the 5th column", required=True, type=str)
+    parser.add_argument("-I", "--Index_library", help="Input index library. Indexes must be in the 5th column", required=True, type=str)
     return parser.parse_args()
 
 
@@ -450,7 +453,7 @@ I_table="/projects/bgmp/mrezzoni/Bi624/HW2/indexes.txt"
 ```
 
 ## Files created after script completed
-```{r, echo=FALSE, fig.align="center"}
+```{r, out.width="95%", echo=FALSE, fig.align="center"}
 include_graphics("/Users/evangelinarivas/Desktop/Zipped_output.png")
 ```                   
   
